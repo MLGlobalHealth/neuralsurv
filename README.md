@@ -59,11 +59,7 @@ x_test = jax.random.normal(jr.split(key)[5], (n_test, p))
 ```
 
 Don't forget to rescale your time so the start time is 0.
-```python
-min_time_train = time_train.min()
-time_train = time_train - min_time_train
-time_test = time_test - min_time_train
-```
+
 
 ### Specify Model and Training Parameters
 
@@ -106,33 +102,20 @@ Number of posterior samples to draw:
 num_samples = 1000
 ```
 
-### Load environments and NeuralSurv class
-```python
 
-import jax
-import jax.numpy as jnp
-import jax.random as jr
-
-from sksurv.nonparametric import kaplan_meier_estimator
-
-from model.model import NMLP, MLP
-from neuralsurv import NeuralSurv
-from postprocessing.plot import (
-    plot_posterior_phi,
-    plot_hazard_function,
-    plot_survival_function_vs_km_curve,
-)
-
-```
 
 
 ### Fit the Model
 
 #### Create model instance:
 
+
 ```python
+from model.model import NMLP, MLP
+
 model = NMLP(mlp_main=MLP(n_hidden=n_hidden, n_layers=n_layers, activation=activation))
 ```
+This is the model architecture described in the paper. You can use any other model in Jax
 
 #### Initialize parameters:
 
@@ -144,6 +127,8 @@ model_params_init = model.init(step_rng, jnp.array([0]), jnp.zeros(p))
 #### Instantiate NeuralSurv:
 
 ```python
+from neuralsurv import NeuralSurv
+
 neuralsurv = NeuralSurv.load_or_create(
     model,
     model_params_init,
@@ -167,49 +152,37 @@ neuralsurv.fit(time_train, event_train, x_train)
 
 ### Posterior and Prior Sampling
 
-After fitting the model, you can draw posterior and prior samples:
+After fitting the model, you can draw posterior samples:
 
 ```python
 key, step_rng = jr.split(key)
 neuralsurv.get_posterior_samples(step_rng, num_samples)
-
-key, step_rng = jr.split(key)
-neuralsurv.get_prior_samples(step_rng, num_samples)
 ```
 
-###  Plotting Functions
-
-#### Posterior Distribution of $\phi$
-```python
-plot_posterior_phi(
-    neuralsurv.posterior_params["alpha"],
-    neuralsurv.posterior_params["beta"],
-    plot_dir,
-)
-```
-
-#### Hazard Function
-```python
-times = jnp.linspace(1e-6, time_train.max(), num=100)
-plot_hazard_function(neuralsurv.predict_hazard_function(times, x_train, aggregate=(0,2)), plot_dir, "train")
-```
-
-#### Survival Function vs Kaplan-Meier
-```python
-from sksurv.nonparametric import kaplan_meier_estimator
-
-km_times_train, km_survival_train = kaplan_meier_estimator(event_train.astype(bool), time_train)
-surv_train = neuralsurv.predict_survival_function(times, x_train, aggregate=(0,2))
-plot_survival_function_vs_km_curve(surv_train, km_times_train, km_survival_train, plot_dir, "train")
-```
-
-###  Compute Evaluation Metrics
+### Compute Evaluation Metrics
 
 You can compute concordance index (c-index), Brier score, D-calibration and KM calibration:
 
 ```python
 neuralsurv.compute_evaluation_metrics(time_train, event_train, time_test, event_test, x_test, plot_dir)
 ```
+
+### Predict hazard and survival funtions
+
+You can obtain posterior samples of the hazard and survival functions at new times on the test set with
+
+```python
+time_max = max(time_train.max(), time_test.max())
+delta_time = time_max / 20
+num = int(time_max // delta_time) + 1
+new_times = jnp.linspace(1e-6, time_max, num=num)
+
+hazard_train = neuralsurv.predict_hazard_function(new_times, x_test)
+surv_train = neuralsurv.predict_survival_function(new_times, x_test)
+```
+Dimensions: individual, time, posterior sample.
+
+
 
 
 
