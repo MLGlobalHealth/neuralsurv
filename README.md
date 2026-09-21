@@ -1,7 +1,6 @@
 #  NeuralSurv: Deep Survival Analysis with Bayesian Uncertainty Quantification
 
-Monod, Micheli & Bhatt (2025). NeuralSurv: Deep Survival Analysis with Bayesian Uncertainty Quantification. arXiv. [DOI](
-https://doi.org/10.48550/arXiv.2505.11054)
+Monod, Micheli & Bhatt (2025). NeuralSurv: Deep Survival Analysis with Bayesian Uncertainty Quantification. NeurIPS. 
 
 ## Warranty
 Imperial makes no representation or warranty about the accuracy or completeness of the data nor that the results will not constitute in infringement of third-party rights. Imperial accepts no liability or responsibility for any use which may be made of any results, for the results, nor for any reliance which may be placed on any such work or results.
